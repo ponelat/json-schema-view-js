@@ -8,6 +8,29 @@ import {
 } from './helpers.js';
 
 
+// For escaping ( see below )
+var entityMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
+/**
+ * Quote HTML entities ( stolen from mustache.js )
+ * @param {string} html
+ * @return {string} with html entities quoted
+ */
+function e(string) {
+  return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap (s) {
+    return entityMap[s];
+  });
+}
+
 /**
  * @class JSONSchemaView
  *
@@ -82,14 +105,14 @@ export default class JSONSchemaView {
       <!-- Any -->
       ${_if(this.isAny)`
         <div class="any">
-          ${_if(this.showToggle)`
-            <a class="title"><span class="toggle-handle"></span>${this.schema.title || ''} </a>
+          ${_if(this.schema.description || this.schema.title)`
+            <a class="title"><span class="toggle-handle"></span>${e(this.schema.title || '')} </a>
           `}
 
           <span class="type type-any">&lt;any&gt;</span>
 
           ${_if(this.schema.description && !this.isCollapsed)`
-            <div class="inner description">${this.schema.description}</div>
+            <div class="inner description">${e(this.schema.description)}</div>
           `}
         </div>
       `}
@@ -97,46 +120,46 @@ export default class JSONSchemaView {
       <!-- Primitive -->
       ${_if(this.isPrimitive)`
         <div class="primitive">
-          ${_if(this.showToggle)`
-            <a class="title"><span class="toggle-handle"></span>${this.schema.title || ''} </a>
+          ${_if(this.schema.description || this.schema.title)`
+            <a class="title"><span class="toggle-handle"></span>${e(this.schema.title || '')} </a>
           `}
 
-            <span class="type">${this.schema.type}</span>
+            <span class="type">${e(this.schema.type)}</span>
 
           ${_if(this.schema.isRequired)`
             <span class="required">*</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.format)`
-            <span class="format">(${this.schema.format})</span>
+            <span class="format">(${e(this.schema.format)})</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.minimum)`
-            <span class="range minimum">minimum:${this.schema.minimum}</span>
+            <span class="range minimum">minimum:${e(this.schema.minimum)}</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.exclusiveMinimum)`
-            <span class="range exclusiveMinimum">(ex)minimum:${this.schema.exclusiveMinimum}</span>
+            <span class="range exclusiveMinimum">(ex)minimum:${e(this.schema.exclusiveMinimum)}</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.maximum)`
-            <span class="range maximum">maximum:${this.schema.maximum}</span>
+            <span class="range maximum">maximum:${e(this.schema.maximum)}</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.exclusiveMaximum)`
-            <span class="range exclusiveMaximum">(ex)maximum:${this.schema.exclusiveMaximum}</span>
+            <span class="range exclusiveMaximum">(ex)maximum:${e(this.schema.exclusiveMaximum)}</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.minLength)`
-            <span class="range minLength">minLength:${this.schema.minLength}</span>
+            <span class="range minLength">minLength:${e(this.schema.minLength)}</span>
           `}
 
           ${_if(!this.isCollapsed && this.schema.maxLength)`
-            <span class="range maxLength">maxLength:${this.schema.maxLength}</span>
+            <span class="range maxLength">maxLength:${e(this.schema.maxLength)}</span>
           `}
 
           ${_if(this.schema.description && !this.isCollapsed)`
-            <div class="inner description">${this.schema.description}</div>
+            <div class="inner description">${e(this.schema.description)}</div>
           `}
 
           ${_if(!this.isCollapsed && this.schema.enum)`
@@ -153,16 +176,16 @@ export default class JSONSchemaView {
       <!-- Array -->
       ${_if(this.isArray)`
         <div class="array">
-          <a class="title"><span class="toggle-handle"></span>${this.schema.title || ''}<span class="opening bracket">[</span>${_if(this.isCollapsed)`<span class="closing bracket">]</span>`}</a>
+          <a class="title"><span class="toggle-handle"></span>${e(this.schema.title || '')}<span class="opening bracket">[</span>${_if(this.isCollapsed)`<span class="closing bracket">]</span>`}</a>
           ${_if(!this.isCollapsed && (this.schema.uniqueItems || this.schema.minItems || this.schema.maxItems))`
           <span>
-            <span title="items range">(${this.schema.minItems || 0}..${this.schema.maxItems || '∞'})</span>
+            <span title="items range">(${e(this.schema.minItems || 0)}..${e(this.schema.maxItems || '∞')})</span>
             ${_if(!this.isCollapsed && this.schema.uniqueItems)`<span title="unique" class="uniqueItems">♦</span>`}
           </span>
           `}
           <div class="inner">
             ${_if(!this.isCollapsed && this.schema.description)`
-              <div class="description">${this.schema.description}</div>
+              <div class="description">${e(this.schema.description)}</div>
             `}
           </div>
 
@@ -184,14 +207,14 @@ export default class JSONSchemaView {
       ${_if(!this.isPrimitive && !this.isArray && !this.isAny)`
         <div class="object">
           <a class="title"><span
-            class="toggle-handle"></span>${this.schema.title || ''} <span
+            class="toggle-handle"></span>${e(this.schema.title || '')} <span
             class="opening brace">{</span>${_if(this.isCollapsed)`
               <span class="closing brace" ng-if="isCollapsed">}</span>
           `}</a>
 
           <div class="inner">
             ${_if(!this.isCollapsed && this.schema.description)`
-              <div class="description">${this.schema.description}</div>
+              <div class="description">${e(this.schema.description)}</div>
             `}
             <!-- children go here -->
           </div>
@@ -217,8 +240,8 @@ export default class JSONSchemaView {
   */
   xOf(schema, type) {
     return `
-      <div class="inner ${type}">
-        <b>${convertXOf(type)}:</b>
+      <div class="inner ${e(type)}">
+        <b>${e(convertXOf(type))}:</b>
       </div>
     `;
   }
